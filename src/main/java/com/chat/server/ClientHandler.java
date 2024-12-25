@@ -1,21 +1,27 @@
 package com.chat.server;
 
-import java.io.*;
-import java.net.Socket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.chat.model.User;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
+
 public class ClientHandler implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(ClientHandler.class);
     private final Socket clientSocket;
     private final UserManager userManager;
+    private final ActionLogger actionLogger;
 
-    public ClientHandler(Socket socket, UserManager userManager) {
+    public ClientHandler(Socket socket, UserManager userManager, ActionLogger actionLogger) {
         this.clientSocket = socket;
         this.userManager = userManager;
+        this.actionLogger = actionLogger;
     }
 
     @Override
@@ -43,24 +49,32 @@ public class ClientHandler implements Runnable {
         try {
             JsonObject jsonMessage = JsonParser.parseString(message).getAsJsonObject();
             String action = jsonMessage.get("action").getAsString();
+            String username = jsonMessage.get("username").getAsString();
 
-            if ("register".equals(action)) {
-                String username = jsonMessage.get("username").getAsString();
-                String password = jsonMessage.get("password").getAsString();
-                userManager.registerUser (username, password);
-                out.println("User  registered successfully.");
-            } else if ("login".equals(action)) {
-                String username = jsonMessage.get("username").getAsString();
-                String password = jsonMessage.get("password").getAsString();
-                User user = userManager.getUser (username);
-                if (user != null && user.getPasswordHash().equals(hashPassword(password))) {
-                    // Добавлено условие для вывода имени пользователя
-                    out.println("User  " + user.getUsername() + " logged in successfully.");
-                } else {
-                    out.println("Invalid username or password.");
-                }
-            } else {
-                out.println("Unknown action: " + action);
+            switch (action) {
+                case "register":
+                    String password = jsonMessage.get("password").getAsString();
+                    userManager.registerUser (username, password);
+                    actionLogger.logAction(username, "registered");
+                    out.println("User  registered successfully.");
+                    break;
+                case "login":
+                    password = jsonMessage.get("password").getAsString();
+                    User user = userManager.getUser (username);
+                    if (user != null && user.getPasswordHash().equals(hashPassword(password))) {
+                        actionLogger.logAction(username, "logged in");
+                        out.println("User  " + user.getUsername() + " logged in successfully.");
+                    } else {
+                        out.println("Invalid username or password.");
+                    }
+                    break;
+                case "message":
+                    String text = jsonMessage.get("text").getAsString();
+                    actionLogger.logAction(username, "sent a message: " + text);
+                    // Логика отправки сообщения другим пользователям
+                    break;
+                default:
+                    out.println("Unknown action: " + action);
             }
         } catch (Exception e) {
             out.println("Error processing message: " + e.getMessage());
@@ -69,6 +83,6 @@ public class ClientHandler implements Runnable {
     }
 
     private String hashPassword(String password) {
-        return password;
+        return password; // Здесь вы можете добавить вашу логику хэширования
     }
 }
