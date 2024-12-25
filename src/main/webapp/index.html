@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Чат-приложение</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+        #login, #register, #chat {
+            display: none;
+        }
+        #chat {
+            margin-top: 20px;
+        }
+        #messages {
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 300px;
+            overflow-y: scroll;
+            background: #fff;
+        }
+    </style>
+</head>
+<body>
+<h1>Чат-приложение</h1>
+
+<div id="login">
+    <h2>Вход</h2>
+    <label for="loginUsername"></label><input type="text" id="loginUsername" placeholder="Имя пользователя" required>
+    <label for="loginPassword"></label><input type="password" id="loginPassword" placeholder="Пароль" required>
+    <button onclick="login()">Войти</button>
+    <p>Нет аккаунта? <a href="#" onclick="showRegister()">Зарегистрироваться</a></p>
+</div>
+
+<div id="register">
+    <h2>Регистрация</h2>
+    <label for="registerUsername"></label><input type="text" id="registerUsername" placeholder="Имя пользователя" required>
+    <label for="registerPassword"></label><input type="password" id="registerPassword" placeholder="Пароль" required>
+    <button onclick="register()">Зарегистрироваться</button>
+    <p>Уже есть аккаунт? <a href="#" onclick="showLogin()">Войти</a></p>
+</div>
+
+<div id="chat">
+    <h2>Чат</h2>
+    <div id="messages"></div>
+    <label for="messageInput"></label><input type="text" id="messageInput" placeholder="Введите сообщение" required>
+    <button onclick="sendMessage()">Отправить</button>
+    <p>Подключенные пользователи: <span id="userCount">0</span></p>
+</div>
+
+<script>
+    let socket;
+
+    function showLogin() {
+        document.getElementById('login').style.display = 'block';
+        document.getElementById('register').style.display = 'none';
+        document.getElementById('chat').style.display = 'none';
+    }
+
+    function showRegister() {
+        document.getElementById('login').style.display = 'none';
+        document.getElementById('register').style.display = 'block';
+        document.getElementById('chat').style.display = 'none';
+    }
+
+    function showChat() {
+        document.getElementById('login').style.display = 'none';
+        document.getElementById('register').style.display = 'none';
+        document.getElementById('chat').style.display = 'block';
+    }
+
+    function connect() {
+        socket = new WebSocket('ws://localhost:8080/chat'); 
+
+        socket.onmessage = function(event) {
+            const message = JSON.parse(event.data);
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.innerHTML += `<p>${message.username}: ${message.text}</p>`;
+        };
+
+        socket.onopen = function() {
+            console.log('Connected to server');
+        };
+
+        socket.onclose = function() {
+            console.log('Disconnected from server');
+        };
+    }
+
+    function login() {
+        const username = document.getElementById('loginUsername').value;
+        const password = document.getElementById('loginPassword').value;
+        socket.send(JSON.stringify({ action: 'login', username, password }));
+        showChat();
+        connect();
+    }
+
+    function register() {
+        const username = document.getElementById('registerUsername').value;
+        const password = document.getElementById('registerPassword').value;
+        socket.send(JSON.stringify({ action: 'register', username, password }));
+        showChat();
+        connect();
+    }
+
+    function sendMessage() {
+        const messageInput = document.getElementById('messageInput');
+        const message = messageInput.value;
+        socket.send(JSON.stringify({ action: 'message', text: message }));
+        messageInput.value = ''; // Очистите поле ввода
+    }
+
+    // Показать форму входа при загрузке страницы
+    window.onload = showLogin;
+</script>
+</body>
+</html>
