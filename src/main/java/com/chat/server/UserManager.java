@@ -18,7 +18,7 @@ public class UserManager {
     }
 
     private String hashPassword(String password) {
-        return password; // Здесь вы можете добавить вашу логику хэширования
+        return password;
     }
 
     public User getUser (String username) {
