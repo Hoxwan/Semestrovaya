@@ -83,6 +83,6 @@ public class ClientHandler implements Runnable {
     }
 
     private String hashPassword(String password) {
-        return password; // Здесь вы можете добавить вашу логику хэширования
+        return password;
     }
 }
