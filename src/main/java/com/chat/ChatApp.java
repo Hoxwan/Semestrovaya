@@ -18,6 +18,8 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
+import java.time.LocalDateTime; // Добавляем импорт для работы с датой и временем
+import java.time.format.DateTimeFormatter; // Импорт для форматирования времени
 
 public class ChatApp extends Application {
     private static final Logger logger = LoggerFactory.getLogger(ChatApp.class);
@@ -40,6 +42,9 @@ public class ChatApp extends Application {
         launchServer = new LaunchServer();
         launchServer.initialize();
 
+        Label logoLabel = new Label("ChatHub");
+        logoLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-padding: 10;"); // Стиль для логотипа
+
         usernameField = new TextField();
         usernameField.setPromptText("Имя пользователя");
 
@@ -58,6 +63,8 @@ public class ChatApp extends Application {
         chatArea = new TextArea();
         chatArea.setEditable(false);
         chatArea.setVisible(false);
+        chatArea.setPrefHeight(300);
+        chatArea.setWrapText(true);
         loadChatHistory(); // Загружаем историю чата при запуске
 
         inputField = new TextField();
@@ -76,12 +83,12 @@ public class ChatApp extends Application {
         topBar.getChildren().add(logoutButton);
         topBar.setStyle("-fx-alignment: center-right; -fx-padding: 10;"); // Выравнивание и отступы
 
-        VBox vbox = new VBox(10, usernameField, passwordField, loginButton, registerButton, statusLabel, chatArea, inputField, sendButton);
+        VBox vbox = new VBox(10, logoLabel,usernameField, passwordField, loginButton, registerButton, statusLabel, chatArea, inputField, sendButton);
         BorderPane borderPane = new BorderPane();
         borderPane.setTop(topBar);
         borderPane.setCenter(vbox);
 
-        Scene scene = new Scene(borderPane, 400, 400);
+        Scene scene = new Scene(borderPane, 400, 600);
         primaryStage.setScene(scene);
         primaryStage.show();
     }
@@ -116,7 +123,12 @@ public class ChatApp extends Application {
     private void handleSendMessage() {
         String message = inputField.getText();
         if (!message.isEmpty()) {
-            String fullMessage = currentUsername + ": " + message; // Формируем сообщение с ником
+            // Получаем текущее время и форматируем его
+            LocalDateTime now = LocalDateTime.now();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+            String time = now.format(formatter);
+
+            String fullMessage = currentUsername + " [" + time + "]: " + message; // Формируем сообщение с ником и временем
             chatArea.appendText(fullMessage + "\n");
             saveMessage(fullMessage); // Сохраняем сообщение в файл
             inputField.clear();
